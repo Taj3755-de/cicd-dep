@@ -1,0 +1,9 @@
+namespace: production
+replicaCount: 2
+image:
+  repository: 172.31.3.134:5000/nginx-app
+  tag: latest
+service:
+  nodePort: 30082
+ingress:
+  host: prod.local
