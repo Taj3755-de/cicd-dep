@@ -16,6 +16,17 @@ pipeline {
       }
     }
 
+      stage('TruffleHog - Secret Scan') {
+      steps {
+        sh '''
+        trufflehog filesystem . --fail --json > trufflehog-report.json || {
+            echo "❌ Sensitive data detected in repo!";
+            exit 1;
+          }
+        '''
+      }
+    }
+    
    stage('Build Docker Image') {
       steps {
         dir('app') {
