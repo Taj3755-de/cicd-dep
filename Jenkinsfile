@@ -32,10 +32,7 @@ pipeline {
       steps {
         sh '''
         echo ">>> Running Trivy scan..."
-        if ! command -v trivy >/dev/null 2>&1; then
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-        fi
-        ./trivy image --severity HIGH,CRITICAL --exit-code 1 ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} || {
+              trivy image --severity HIGH,CRITICAL --exit-code 1 ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} || {
           echo "❌ Critical vulnerabilities found! Build failed.";
           exit 1;
         }
