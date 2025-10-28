@@ -1,0 +1,9 @@
+namespace: staging
+replicaCount: 1
+image:
+  repository: 172.31.3.134:5000/nginx-app
+  tag: latest
+service:
+  nodePort: 30081
+ingress:
+  host: staging.local
