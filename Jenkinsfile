@@ -75,17 +75,15 @@ pipeline {
   }
 }
 
-
-    stage('Post-Deployment Check') {
-      steps {
-        sshagent(['kube-master-ssh']) {
-          sh '''
-          ssh -o StrictHostKeyChecking=no ${K8S_MASTER} "
-            kubectl get pods -n ${params.DEPLOY_ENV} -o wide
-          "
-          '''
-        }
-      }
+stage('Post Deploy Check') {
+  steps {
+    sshagent(['kube-master-ssh']) {
+      sh """
+        echo ">>> Checking deployment status..."
+        ssh -o StrictHostKeyChecking=no ${K8S_MASTER} "kubectl get pods -n ${DEPLOY_ENV} -o wide"
+      """
     }
+  }
+}
   }
 }
