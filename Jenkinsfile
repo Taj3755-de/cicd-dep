@@ -10,7 +10,6 @@ pipeline {
     IMAGE_NAME = "py-app"
     K8S_MASTER = "rocky@172.31.86.230"
   }
-
   stages {
     stage('Checkout') {
       steps {
