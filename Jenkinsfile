@@ -29,6 +29,19 @@ pipeline {
   }
 }
 
+    stage('Unit Tests') {
+      steps {
+        dir('app') {
+          sh '''
+            echo ">>> Running Python unit tests..."
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+            pytest --maxfail=1 --disable-warnings -q || { echo "❌ Unit tests failed!"; exit 1; }
+          '''
+        }
+      }
+    }
     
    stage('Build Docker Image') {
       steps {
