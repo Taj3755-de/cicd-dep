@@ -55,27 +55,26 @@ pipeline {
   }
 }
 
-    stage('Deploy via Helm') {
-      steps {
-        sshagent(['kube-master-ssh']) {
-          sh '''
-          echo ">>> Deploying via Helm..."
-          ssh -o StrictHostKeyChecking=no ${K8S_MASTER} "
-            mkdir -p /home/rocky/deployments &&
-            rm -rf /home/rocky/deployments/py-app &&
-            scp -r helm/py-app /home/rocky/deployments/
-          "
-          ssh -o StrictHostKeyChecking=no ${K8S_MASTER} "
-            helm upgrade --install py-app-release /home/rocky/deployments/py-app \
-              -n ${params.DEPLOY_ENV} \
-              -f /home/rocky/deployments/py-app/values-${params.DEPLOY_ENV}.yaml \
-              --set image.repository=${REGISTRY}/${IMAGE_NAME} \
-              --set image.tag=${BUILD_NUMBER}
-          "
-          '''
-        }
-      }
+  stage('Deploy via Helm') {
+  steps {
+    sshagent(['kube-master-ssh']) {
+      sh '''
+        echo ">>> Copying Helm chart to K8s Master..."
+        scp -o StrictHostKeyChecking=no -r helm/py-app ${K8S_MASTER}:/home/rocky/deployments/
+
+        echo ">>> Deploying via Helm..."
+        ssh -o StrictHostKeyChecking=no ${K8S_MASTER} "
+          helm upgrade --install py-app /home/rocky/deployments/py-app \
+            -n ${DEPLOY_ENV} \
+            -f /home/rocky/deployments/py-app/values-${DEPLOY_ENV}.yaml \
+            --set image.repository=${REGISTRY}/${IMAGE_NAME} \
+            --set image.tag=${BUILD_NUMBER}
+        "
+      '''
     }
+  }
+}
+
 
     stage('Post-Deployment Check') {
       steps {
