@@ -16,16 +16,19 @@ pipeline {
       }
     }
 
-      stage('TruffleHog - Secret Scan') {
-      steps {
-        sh '''
-        trufflehog filesystem . --fail --json > trufflehog-report.json || {
-            echo "❌ Sensitive data detected in repo!";
-            exit 1;
-          }
-        '''
+  stage('TruffleHog - Secret Scan') {
+  steps {
+    sh '''
+      echo ">>> Running TruffleHog (Docker) secret scan..."
+      docker run --rm -v $(pwd):/repo ghcr.io/trufflesecurity/trufflehog:latest \
+        filesystem /repo --fail --json > trufflehog-report.json || {
+          echo "❌ Secrets found in repository!";
+          exit 1;
       }
-    }
+    '''
+  }
+}
+
     
    stage('Build Docker Image') {
       steps {
