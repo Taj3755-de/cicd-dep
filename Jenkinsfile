@@ -4,7 +4,6 @@ pipeline {
   parameters {
     choice(name: 'DEPLOY_ENV', choices: ['staging','production'], description: 'Select deployment environment')
   }
-
   environment {
     REGISTRY = "172.31.3.134:5000"
     IMAGE_NAME = "py-app"
