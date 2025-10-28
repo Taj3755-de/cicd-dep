@@ -49,14 +49,6 @@ pipeline {
       }
     }
 
-    stage('Helm Lint') {
-      steps {
-        sh '''
-        echo ">>> Linting Helm chart..."
-        helm lint helm/py-app || true
-        '''
-      }
-    }
     stage('Debug Workspace') {
   steps {
     sh 'pwd && ls -R'
