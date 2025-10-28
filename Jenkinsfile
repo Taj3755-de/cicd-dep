@@ -57,6 +57,11 @@ pipeline {
         '''
       }
     }
+    stage('Debug Workspace') {
+  steps {
+    sh 'pwd && ls -R'
+  }
+}
 
     stage('Deploy via Helm') {
       steps {
