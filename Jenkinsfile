@@ -72,31 +72,31 @@ stage('Unit Tests') {
       }
     }
 
-    stage('Debug Workspace') {
-  steps {
-    sh 'pwd && ls -R'
-  }
-}
-
- stage('Deploy via Helm (Atomic)') {
+stage('Deploy via Helm (Atomic)') {
     steps {
         sshagent(['kube-master-ssh']) {
             sh '''
-            echo ">>> Deploying via Helm (Atomic & Safe Mode)..."
-            ssh -o StrictHostKeyChecking=no ${K8S_MASTER} bash -c "'
-              mkdir -p /home/rocky/deployments && \
-              rm -rf /home/rocky/deployments/py-app && \
-              scp -r helm/py-app /home/rocky/deployments/ && \
+            echo ">>> Deploying via Helm (Atomic)..."
+
+            # Save workspace for reference
+            WORKSPACE_DIR=$(pwd)
+            echo "Current Jenkins workspace: $WORKSPACE_DIR"
+
+            # Copy Helm chart to Kubernetes master
+            ssh -o StrictHostKeyChecking=no rocky@172.31.86.230 "mkdir -p /home/rocky/deployments"
+            scp -o StrictHostKeyChecking=no -r $WORKSPACE_DIR/helm/py-app rocky@172.31.86.230:/home/rocky/deployments/
+
+            # Deploy using Helm with atomic mode
+            ssh -o StrictHostKeyChecking=no rocky@172.31.86.230 "
               helm upgrade --install py-app /home/rocky/deployments/py-app \
-                --namespace ${DEPLOY_ENV} \
-                --create-namespace \
-                --values /home/rocky/deployments/py-app/values-${DEPLOY_ENV}.yaml \
+                -n ${DEPLOY_ENV} \
+                -f /home/rocky/deployments/py-app/values-${DEPLOY_ENV}.yaml \
                 --set image.repository=${REGISTRY}/${IMAGE_NAME} \
                 --set image.tag=${BUILD_NUMBER} \
                 --atomic \
                 --wait \
                 --timeout 5m
-            '"
+            "
             '''
         }
     }
