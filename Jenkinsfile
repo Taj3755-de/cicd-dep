@@ -20,10 +20,16 @@ stage('TruffleHog - Secret Scan') {
     sh '''
       echo ">>> Running TruffleHog secret scan..."
       docker run --rm -v $(pwd):/repo ghcr.io/trufflesecurity/trufflehog:latest \
-        filesystem /repo --json > trufflehog-report.json || true
-
-      echo "✅ TruffleHog scan completed. Report: trufflehog-report.json"
+        filesystem /repo --fail --json > trufflehog-report.json
     '''
+  }
+  post {
+    always {
+      archiveArtifacts artifacts: 'trufflehog-report.json', fingerprint: true
+    }
+    failure {
+      echo "❌ TruffleHog found secrets — failing build!"
+    }
   }
 }
 
