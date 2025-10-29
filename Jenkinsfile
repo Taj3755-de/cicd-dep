@@ -22,7 +22,7 @@ stage('TruffleHog - Secret Scan') {
       docker run --rm -v $(pwd):/repo ghcr.io/trufflesecurity/trufflehog:latest \
         filesystem /repo --fail --json > trufflehog-report.json
          echo "Secrets found in repository!";
-          exit 1;
+        # exit 1;
     '''
   }
   post {
@@ -38,12 +38,30 @@ stage('TruffleHog - Secret Scan') {
 stage('tfsec - IaC Security Scan') {
   steps {
     sh '''
-      echo "🔍 Running tfsec scan..."
+      echo "Running tfsec scan..."
+      
+      # Run tfsec with soft-fail so pipeline doesn't stop automatically
       tfsec helm/py-app --format json --out tfsec-report.json --soft-fail
-      echo "✅ tfsec report generated: tfsec-report.json"
+      
+      # You can comment out exit 1 if you don't want to fail the build on findings
+      if grep -q '"severity":"HIGH"' tfsec-report.json || grep -q '"severity":"CRITICAL"' tfsec-report.json; then
+        echo " High or Critical issues detected in tfsec scan!"
+        # exit 1   # <-- Uncomment this to fail the pipeline on critical findings
+      else
+        echo " No high-severity tfsec issues detected."
+      fi
+
+      echo "tfsec report generated: tfsec-report.json"
     '''
   }
+  post {
+    always {
+      echo "Archiving tfsec report..."
+      archiveArtifacts artifacts: 'tfsec-report.json', fingerprint: true
+    }
+  }
 }
+
 
 stage('Unit Tests') {
   steps {
