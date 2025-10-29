@@ -78,27 +78,28 @@ stage('Unit Tests') {
   }
 }
 
-  stage('Deploy via Helm') {
-  steps {
-    sshagent(['kube-master-ssh']) {
-      sh '''
-        echo ">>> Copying Helm chart to K8s Master..."
-        scp -o StrictHostKeyChecking=no -r helm/py-app ${K8S_MASTER}:/home/rocky/deployments/
-
-        echo ">>> Deploying via Helm..."
-        ssh -o StrictHostKeyChecking=no ${K8S_MASTER} "
-          helm upgrade --install py-app /home/rocky/deployments/py-app \
-            -n ${DEPLOY_ENV} \
-            -f /home/rocky/deployments/py-app/values-${DEPLOY_ENV}.yaml \
-            --set image.repository=${REGISTRY}/${IMAGE_NAME} \
-            --set image.tag=${BUILD_NUMBER}
-            --atomic \
-            --wait \
-            --timeout 5m
-        "
-      '''
+ stage('Deploy via Helm (Atomic)') {
+    steps {
+        sshagent(['kube-master-ssh']) {
+            sh '''
+            echo ">>> Deploying via Helm (Atomic & Safe Mode)..."
+            ssh -o StrictHostKeyChecking=no ${K8S_MASTER} bash -c "'
+              mkdir -p /home/rocky/deployments && \
+              rm -rf /home/rocky/deployments/py-app && \
+              scp -r helm/py-app /home/rocky/deployments/ && \
+              helm upgrade --install py-app /home/rocky/deployments/py-app \
+                --namespace ${DEPLOY_ENV} \
+                --create-namespace \
+                --values /home/rocky/deployments/py-app/values-${DEPLOY_ENV}.yaml \
+                --set image.repository=${REGISTRY}/${IMAGE_NAME} \
+                --set image.tag=${BUILD_NUMBER} \
+                --atomic \
+                --wait \
+                --timeout 5m
+            '"
+            '''
+        }
     }
-  }
 }
 
 stage('Post Deploy Check') {
