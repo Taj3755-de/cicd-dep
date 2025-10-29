@@ -15,39 +15,39 @@ pipeline {
         checkout scm
       }
     }
-
-  stage('TruffleHog - Secret Scan') {
+stage('TruffleHog - Secret Scan') {
   steps {
     sh '''
-      echo ">>> Running TruffleHog (Docker) secret scan..."
+      echo ">>> Running TruffleHog secret scan..."
       docker run --rm -v $(pwd):/repo ghcr.io/trufflesecurity/trufflehog:latest \
-        filesystem /repo --fail --json > trufflehog-report.json || {
-          echo "❌ Secrets found in repository!";
-   
-      }
+        filesystem /repo --json > trufflehog-report.json || true
+
+      echo "✅ TruffleHog scan completed. Report: trufflehog-report.json"
     '''
   }
 }
 
-stage('tfsec') {
-      steps {
-        sh '''
-          echo "🔍 Running IaC Security Scan..."
-          tfsec helm/py-app --soft-fail --format json > tfsec-report.json
-          echo "✅ IaC scan completed. Reports generated."
-        '''
-      }
-    }
-stage('Unit Tests') {
-    steps {
-        sh '''
-        echo ">>> Running unit tests..."
-        pip install -r app/requirements.txt pytest pytest-cov
-        export PYTHONPATH=$PYTHONPATH:$(pwd)/app
-        pytest -v app/tests
-        '''
-    }
+stage('tfsec - IaC Security Scan') {
+  steps {
+    sh '''
+      echo "🔍 Running tfsec scan..."
+      tfsec helm/py-app --format json --out tfsec-report.json --soft-fail
+      echo "✅ tfsec report generated: tfsec-report.json"
+    '''
+  }
 }
+
+stage('Unit Tests') {
+  steps {
+    sh '''
+      echo ">>> Running unit tests..."
+      pip install -r app/requirements.txt pytest pytest-cov
+      export PYTHONPATH=$PYTHONPATH:$(pwd)/app
+      pytest app/tests --junitxml=pytest-report.xml --cov=app --cov-report=html
+    '''
+  }
+}
+
 
     
    stage('Build Docker Image') {
@@ -109,6 +109,19 @@ stage('Deploy via Helm (Atomic)') {
     }
 }
 
+    stage('Archive Reports') {
+  steps {
+    archiveArtifacts artifacts: '''
+      trufflehog-report.json,
+      tfsec-report.json,
+      pytest-report.xml,
+      htmlcov/**
+    ''', fingerprint: true
+    junit 'pytest-report.xml'
+  }
+}
+
+    
 stage('Post Deploy Check') {
   steps {
     sshagent(['kube-master-ssh']) {
