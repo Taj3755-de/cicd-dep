@@ -93,9 +93,6 @@ stage('Deploy via Helm (Atomic)') {
                 -f /home/rocky/deployments/py-app/values-${DEPLOY_ENV}.yaml \
                 --set image.repository=${REGISTRY}/${IMAGE_NAME} \
                 --set image.tag=${BUILD_NUMBER} \
-                --atomic \
-                --wait \
-                --timeout 5m
             "
             '''
         }
