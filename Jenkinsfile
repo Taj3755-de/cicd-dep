@@ -21,6 +21,8 @@ stage('TruffleHog - Secret Scan') {
       echo ">>> Running TruffleHog secret scan..."
       docker run --rm -v $(pwd):/repo ghcr.io/trufflesecurity/trufflehog:latest \
         filesystem /repo --fail --json > trufflehog-report.json
+         echo "Secrets found in repository!";
+          exit 1;
     '''
   }
   post {
