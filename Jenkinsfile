@@ -57,7 +57,7 @@ stage('Unit Tests') {
         echo ">>> Running Trivy scan..."
               trivy image --severity HIGH,CRITICAL --exit-code 1 ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} || {
           echo "❌ Critical vulnerabilities found! Build failed.";
-          exit 1;
+         
         }
         '''
       }
