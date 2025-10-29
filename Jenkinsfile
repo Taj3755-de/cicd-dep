@@ -29,6 +29,15 @@ pipeline {
   }
 }
 
+stage('tfsec') {
+      steps {
+        sh '''
+          echo "🔍 Running IaC Security Scan..."
+          tfsec helm/py-app --soft-fail --format json > tfsec-report.json
+          echo "✅ IaC scan completed. Reports generated."
+        '''
+      }
+    }
 stage('Unit Tests') {
     steps {
         sh '''
@@ -72,6 +81,7 @@ stage('Unit Tests') {
       }
     }
 
+    
 stage('Deploy via Helm (Atomic)') {
     steps {
         sshagent(['kube-master-ssh']) {
