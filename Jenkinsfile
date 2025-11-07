@@ -17,27 +17,25 @@ pipeline {
     }
 stage('TruffleHog - Secret Scan') {
   steps {
-    timeout(time: 10, unit: 'MINUTES') {
-      sh '''
-        echo ">>> Running TruffleHog secret scan..."
+    sh '''
+      echo ">>> Running TruffleHog secret scan..."
+      docker run --rm -v $(pwd):/repo ghcr.io/trufflesecurity/trufflehog:latest \
+        filesystem /repo --fail --json > trufflehog-report.json || true
+         echo "Secrets found in repository!";
 
-        docker run --rm -v $(pwd):/repo ghcr.io/trufflesecurity/trufflehog:latest \
-          filesystem /repo \
-          --exclude-paths "node_modules,.terraform,target,dist,*.zip" \
-          --max-file-size=5000000 \
-          --fail --json > trufflehog-report.json || true
-      '''
-    }
+    '''
   }
   post {
     always {
-      archiveArtifacts artifacts: 'trufflehog-report.json'
+      archiveArtifacts artifacts: 'trufflehog-report.json', fingerprint: true
     }
     failure {
       echo "TruffleHog found secrets — failing build!"
     }
   }
 }
+
+
 
 stage('tfsec - IaC Security Scan') {
   steps {
